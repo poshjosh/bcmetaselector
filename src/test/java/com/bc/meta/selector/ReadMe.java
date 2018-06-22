@@ -20,6 +20,7 @@ import com.bc.meta.selector.htmlparser.AttributeContextHtmlparser;
 import com.bc.meta.selector.util.SampleConfigPaths;
 import com.bc.meta.ArticleMetaNames;
 import com.bc.meta.impl.ArticleMetaNameIsMultiValue;
+import com.bc.meta.selector.impl.Collectors;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.function.BiFunction;
@@ -46,8 +47,8 @@ public class ReadMe {
                 .jsonParser((reader) -> (Map)JSONValue.parse(reader))
                 .propertyNames(ArticleMetaNames.values())
                 .back()
-                .multipleValueTest(new ArticleMetaNameIsMultiValue())
-                .nodeConverter(nodeContentExtractor)
+                .multiValueTest(new ArticleMetaNameIsMultiValue())
+                .nodeValueExtractor(nodeContentExtractor)
                 .build();
         
         final Parser parser = new Parser();
@@ -58,7 +59,7 @@ public class ReadMe {
 
         Iterator<Node> nodes = parser.elements().iterator();
 
-        final Map map = selector.selectAsMap(nodes, ArticleMetaNames.values());
+        final Map map = selector.select(nodes, ArticleMetaNames.values(), Collectors.toMap());
         
         System.out.println("Printing meta tags data for: " + url + "\n" + map);
     }

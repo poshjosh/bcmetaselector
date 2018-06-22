@@ -34,28 +34,27 @@ public class MetaContent<E> implements Metadata {
     
     private final FilterContext<E> filterContext;
     
-    private final BiFunction<String, E, String> attributeValueProvider;
+    private final BiFunction<String, E, String> attributeValueExtractor;
     
     public MetaContent(
             List<E> nodes, 
             FilterContext<E> filterContext, 
-            BiFunction<String, E, String> attributeValueProvider) {
+            BiFunction<String, E, String> attributeValueExtractor) {
         this.nodes = Collections.unmodifiableList(nodes);
         this.filterContext = Objects.requireNonNull(filterContext);
-        this.attributeValueProvider = Objects.requireNonNull(attributeValueProvider);
+        this.attributeValueExtractor = Objects.requireNonNull(attributeValueExtractor);
     }
 
     @Override
     public String getValue(String name, String outputIfNone) {
         final E node = this.filterContext.findFirstMatchingAnyFilter(name, null, nodes.iterator(), null);
-        return this.attributeValueProvider.apply(name, node);
+        return this.attributeValueExtractor.apply(name, node);
     }
 
     @Override
     public Set<String> getValues(String name) {
         final List<E> found = this.filterContext.selectMatchingAnyFilter(name, null, nodes.iterator(), nodes.size());
-        final Function<E, String> mapper = (node) -> 
-                this.attributeValueProvider.apply(name, node);
+        final Function<E, String> mapper = (node) -> this.attributeValueExtractor.apply(name, node);
         return found.stream().map(mapper).collect(Collectors.toSet());
     }
 }

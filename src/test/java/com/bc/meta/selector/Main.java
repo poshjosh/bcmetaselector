@@ -17,12 +17,11 @@
 package com.bc.meta.selector;
 
 import com.bc.meta.ArticleMetaNames;
-import com.bc.meta.Metadata;
 import com.bc.meta.impl.ArticleMetaNameIsMultiValue;
 import static com.bc.meta.selector.MetaSelectorTest.debug;
 import com.bc.meta.selector.htmlparser.AttributeContextHtmlparser;
+import com.bc.meta.selector.impl.Collectors;
 import com.bc.meta.selector.impl.FilterContextImpl;
-import com.bc.meta.selector.impl.SelectorImpl;
 import com.bc.meta.selector.jsoup.AttributeContextJsoup;
 import com.bc.meta.selector.jsoup.FilterContextJsoup;
 import com.bc.meta.selector.util.SampleConfigPaths;
@@ -31,23 +30,22 @@ import com.bc.net.impl.RequestBuilderImpl;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import org.htmlparser.Node;
-import org.htmlparser.util.NodeList;
 import org.htmlparser.NodeFilter;
 import org.htmlparser.Parser;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import org.htmlparser.Tag;
 import org.htmlparser.dom.HtmlDocument;
-import org.htmlparser.dom.HtmlDocumentImpl;
 import org.htmlparser.filters.TagNameFilter;
 import org.htmlparser.util.NodeIterator;
 import org.htmlparser.util.ParserException;
@@ -154,21 +152,25 @@ public class Main {
         if(iterator) {
             final String ID = "SELECTOR WITH ITERATOR";
             final Selector<Node> selector = this.getSelector(ID, attributeContext, attributeContext);
-            final SelectorImpl.CollectIntoMetadata<Node> consumer = 
-                    new SelectorImpl.CollectIntoMetadata<Node>(attributeContext, new ArticleMetaNameIsMultiValue()) {
+            final Map<String, Object> reused = new HashMap<>();
+            final Collectors.CollectIntoMap collector = new Collectors.CollectIntoMap(reused) {
                 @Override
-                public boolean consume(String propertyName, Node node) {
-                    if(debug) System.out.println(propertyName + " = " + nodeToString.apply(node));
-                    return super.consume(propertyName, node); 
+                public void put(String propertyName, Object value) {
+                    if(debug) System.out.println(propertyName + " = " + value);
+                    super.put(propertyName, value); 
                 }
             };
             parser = (url) -> {
                 try{
                     NodeIterator iter = Main.this.buildNodes(delegate, req, url);
                     if(debug) System.out.println("\n" + LocalDateTime.now() + ". " +ID+" extracting url: " + url);
-                    final Metadata metadata = (Metadata)selector
-                            .select(iter.iterator(), consumer, namesToSelect);
+                    
+                    reused.clear();
+                    
+                    final Map copyThisElseWhere = selector.select(iter.iterator(), namesToSelect, collector);
+                    
                     return Collections.EMPTY_LIST;
+                    
                 }catch(IOException | ParserException e) {
                     throw new RuntimeException(e);
                 }
@@ -176,7 +178,7 @@ public class Main {
         }else{
             parser = (url) -> {
                 try{
-                    final NodeList allNodes = Main.this.buildNodeList(delegate, req, url);
+                    final HtmlDocument allNodes = Main.this.buildDocument(delegate, req, url);
                     return allNodes;
                 }catch(IOException | ParserException e) {
                     throw new RuntimeException(e);
@@ -205,7 +207,7 @@ public class Main {
 
                 final Document doc = Jsoup.parse(new URL(url), 60_000);
 
-                return doc.getAllElements().stream().filter(nodeFilter).collect(Collectors.toList());
+                return doc.getAllElements().stream().filter(nodeFilter).collect(java.util.stream.Collectors.toList());
                 
             }catch(Exception e) {
                 throw new RuntimeException(e);
@@ -228,23 +230,16 @@ public class Main {
                 .jsonParser(new JsonParserImpl())
                 .propertyNames(names)
                 .back()
-                .multipleValueTest(new ArticleMetaNameIsMultiValue())
-                .nodeConverter(attributeValueProvider)
+                .multiValueTest(new ArticleMetaNameIsMultiValue())
+                .nodeValueExtractor(attributeValueProvider)
                 .build();
     }
 
     public HtmlDocument buildDocument(Parser parser, RequestBuilder builder, String url) 
             throws MalformedURLException, IOException, ParserException {
-        final NodeList allNodes = this.buildNodeList(parser, builder, url);
-        final HtmlDocument doc = new HtmlDocumentImpl(url, allNodes);
-        return doc;
-    }
-    
-    public NodeList buildNodeList(Parser parser, RequestBuilder builder, String url) 
-            throws MalformedURLException, IOException, ParserException {
         parser.setConnection(builder.clearCookies().url(new URL(url)).build());
 //        parser.setURL(url);
-        final NodeList allNodes = parser.parse(null);
+        final HtmlDocument allNodes = parser.parse(null);
         return allNodes;
     }
 

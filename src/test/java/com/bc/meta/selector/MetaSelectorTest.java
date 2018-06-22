@@ -27,12 +27,13 @@ import java.util.function.Function;
 import com.bc.meta.selector.util.SampleConfigPaths;
 import com.bc.meta.ArticleMetaNames;
 import com.bc.meta.impl.ArticleMetaNameIsMultiValue;
-import com.bc.meta.selector.impl.SelectorImpl;
+import com.bc.meta.selector.impl.Collectors;
 import com.bc.meta.selector.util.JsonParser;
 import com.bc.meta.selector.util.PropertiesParser;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
@@ -47,7 +48,7 @@ public class MetaSelectorTest<E> {
     private final Function<E, String> nodeToString = (node) -> 
             node instanceof Tag ? ((Tag)node).toTagHtml() : node.toString();
     
-    public static final boolean debug = true;
+    public static final boolean debug = false;
     
     public static final long interval = 0;
     
@@ -57,7 +58,7 @@ public class MetaSelectorTest<E> {
     
     private final BiFunction<AttributeTestProvider<E>, Map, FilterContext<E>> filterContextProvider;
     
-    private final BiFunction<String, E, String> nodeConverter;
+    private final BiFunction<String, E, String> nodeValueExtractor;
     
     private final JsonParser jsonParser = new JsonParserImpl();
     
@@ -69,7 +70,7 @@ public class MetaSelectorTest<E> {
         this.nodeExtractor = Objects.requireNonNull(parser);
         this.attributeContext = Objects.requireNonNull(attributeContext);
         this.filterContextProvider = Objects.requireNonNull(filterContextProvider);
-        this.nodeConverter = Objects.requireNonNull(nodeConverter);
+        this.nodeValueExtractor = Objects.requireNonNull(nodeConverter);
     }
 
     public void filterProviderWithIteratorTest(String [] urls) {
@@ -111,16 +112,17 @@ public class MetaSelectorTest<E> {
                 .jsonParser(jsonParser)
                 .propertyNames(ArticleMetaNames.values())
                 .back()
-                .multipleValueTest(new ArticleMetaNameIsMultiValue())
-                .nodeConverter(nodeConverter)
+                .multiValueTest(new ArticleMetaNameIsMultiValue())
+                .nodeValueExtractor(nodeValueExtractor)
                 .build();
         
-        final SelectorImpl.CollectIntoMetadata<E> consumer = 
-                new SelectorImpl.CollectIntoMetadata<E>(nodeConverter, new ArticleMetaNameIsMultiValue()) {
+        final Map<String, Object> reused = new HashMap<>();
+      
+        final Collectors.CollectIntoMap consumer = new Collectors.CollectIntoMap(reused) {
             @Override
-            public boolean consume(String propertyName, E node) {
-                if(debug) System.out.println(propertyName + " = " + nodeToString.apply(node));
-                return super.consume(propertyName, node); 
+            public void put(String propertyName, Object value) {
+                if(debug) System.out.println(propertyName + " = " + value);
+                super.put(propertyName, value); 
             }
         };
         
@@ -128,8 +130,12 @@ public class MetaSelectorTest<E> {
             try{
                 final List<E> nodes = this.nodeExtractor.apply(url);
                 if(debug) System.out.println("\n" + LocalDateTime.now() + ". " +ID+" extracting url: " + url);
-                final Metadata metadata = (Metadata)selector.select(
-                        nodes.iterator(), consumer, ArticleMetaNames.values());
+                
+                reused.clear();
+                
+                final Map copyThisElseWhere = selector.select(
+                        nodes.iterator(), ArticleMetaNames.values(), consumer);
+                
             }catch(Exception e) {
                 e.printStackTrace();
             }
@@ -191,7 +197,7 @@ public class MetaSelectorTest<E> {
                 final FilterContext<E> filterContext = this.filterContextProvider
                         .apply(attributeContext, config);
                 
-                delegates.add(new MetaContent(nodes, filterContext, nodeConverter));
+                delegates.add(new MetaContent(nodes, filterContext, nodeValueExtractor));
             }
 
             final Metadata metaData = new MetadataComposite(delegates);

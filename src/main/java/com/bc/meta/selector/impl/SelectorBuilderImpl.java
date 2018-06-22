@@ -21,10 +21,10 @@ import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.Map;
 import java.util.Objects;
 import com.bc.meta.selector.Selector;
 import com.bc.meta.selector.SelectorBuilder;
+import java.util.function.Function;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Jun 21, 2018 11:51:22 AM
@@ -33,9 +33,9 @@ public class SelectorBuilderImpl<NODE, NODEVALUE, PREVIOUS_BUILDER> implements S
 
     private FilterBuilder<NODE, SelectorBuilder<NODE, NODEVALUE, PREVIOUS_BUILDER>> filterBuilder;
 
-    private BiFunction<String, NODE, NODEVALUE> nodeConverter;
+    private BiFunction<String, NODE, NODEVALUE> nodeValueExtractor;
     
-    private Predicate<String> multipleValueTest;
+    private Predicate<String> multiValueTest;
     
     private final PREVIOUS_BUILDER back;
 
@@ -53,8 +53,8 @@ public class SelectorBuilderImpl<NODE, NODEVALUE, PREVIOUS_BUILDER> implements S
         if(this.filterBuilder != null) {
             this.filterBuilder.reset();
         }
-        this.nodeConverter = null;
-        this.multipleValueTest = null;
+        this.nodeValueExtractor = null;
+        this.multiValueTest = null;
         return this;
     }
 
@@ -65,13 +65,13 @@ public class SelectorBuilderImpl<NODE, NODEVALUE, PREVIOUS_BUILDER> implements S
     
     @Override
     public Selector<NODE> build() throws IOException, ParseException{
-        Objects.requireNonNull(nodeConverter);
-        Objects.requireNonNull(multipleValueTest);
+        Objects.requireNonNull(nodeValueExtractor);
+        Objects.requireNonNull(multiValueTest);
         if(filterBuilder == null) {
             filterBuilder = new FilterBuilderImpl();
         }
-        final Map<String, Predicate<NODE>> nodeTests = filterBuilder.build();
-        return new SelectorImpl(nodeTests, nodeConverter, multipleValueTest);
+        final Function<String, Predicate<NODE>> nodeTestProvider = filterBuilder.build();
+        return new SelectorImpl(nodeTestProvider, nodeValueExtractor, multiValueTest);
     }
 
     @Override
@@ -89,14 +89,14 @@ public class SelectorBuilderImpl<NODE, NODEVALUE, PREVIOUS_BUILDER> implements S
     }
 
     @Override
-    public SelectorBuilder<NODE, NODEVALUE, PREVIOUS_BUILDER> nodeConverter(BiFunction<String, NODE, NODEVALUE> nodeConverter) {
-        this.nodeConverter = nodeConverter;
+    public SelectorBuilder<NODE, NODEVALUE, PREVIOUS_BUILDER> nodeValueExtractor(BiFunction<String, NODE, NODEVALUE> nodeValueExtractor) {
+        this.nodeValueExtractor = nodeValueExtractor;
         return this;
     }
 
     @Override
-    public SelectorBuilder<NODE, NODEVALUE, PREVIOUS_BUILDER> multipleValueTest(Predicate<String> multipleValueTest) {
-        this.multipleValueTest = multipleValueTest;
+    public SelectorBuilder<NODE, NODEVALUE, PREVIOUS_BUILDER> multiValueTest(Predicate<String> multiValueTest) {
+        this.multiValueTest = multiValueTest;
         return this;
     }
 }

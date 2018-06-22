@@ -24,17 +24,18 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Jun 21, 2018 9:41:12 AM
  */
-public interface FilterBuilder<NODE, PREVIOUS_BUILDER> extends Builder<Map<String, Predicate<NODE>>, PREVIOUS_BUILDER> {
+public interface FilterBuilder<NODE, PREVIOUS_BUILDER> extends Builder<Function<String, Predicate<NODE>>, PREVIOUS_BUILDER> {
 
     FilterBuilder<NODE, PREVIOUS_BUILDER> attributeContext(AttributeTestProvider<NODE> attributeContext);
 
     @Override
-    Map<String, Predicate<NODE>> build() throws IOException, ParseException;
+    Function<String, Predicate<NODE>> build() throws IOException, ParseException;
     
     default FilterBuilder<NODE, PREVIOUS_BUILDER> charset(Charset charset) {
         return this.charset(charset.name());

@@ -43,7 +43,7 @@ public class ReadMe {
 
         Iterator<Node> nodes = parser.elements().iterator();
 
-        final Map map = selector.selectAsMap(nodes, ArticleMetaNames.values());
+        final Map map = selector.select(nodes, ArticleMetaNames.values(), Collectors.toMap());
         
         System.out.println("Printing meta tags data for: " + url + "\n" + map);
     }

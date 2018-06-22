@@ -38,7 +38,7 @@ public interface SelectorBuilder<NODE, NODEVALUE, PREVIOUS_BUILDER> extends Buil
     
     SelectorBuilder<NODE, NODEVALUE, PREVIOUS_BUILDER> filterBuilder(FilterBuilder<NODE, SelectorBuilder<NODE, NODEVALUE, PREVIOUS_BUILDER>> filterBuilder);
 
-    SelectorBuilder<NODE, NODEVALUE, PREVIOUS_BUILDER> nodeConverter(BiFunction<String, NODE, NODEVALUE> nodeConverter);
+    SelectorBuilder<NODE, NODEVALUE, PREVIOUS_BUILDER> nodeValueExtractor(BiFunction<String, NODE, NODEVALUE> nodeConverter);
 
-    SelectorBuilder<NODE, NODEVALUE, PREVIOUS_BUILDER> multipleValueTest(Predicate<String> multipleValueTest);
+    SelectorBuilder<NODE, NODEVALUE, PREVIOUS_BUILDER> multiValueTest(Predicate<String> multipleValueTest);
 }

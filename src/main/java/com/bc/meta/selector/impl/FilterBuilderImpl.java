@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import com.bc.meta.selector.AttributeTestProvider;
+import java.util.function.Function;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Jun 21, 2018 8:58:24 AM
@@ -82,7 +83,7 @@ public class FilterBuilderImpl<E, B> implements FilterBuilder<E, B> {
     }
     
     @Override
-    public Map<String, Predicate<E>> build() throws IOException, ParseException{
+    public Function<String, Predicate<E>> build() throws IOException, ParseException{
         
         Objects.requireNonNull(this.attributeContext);
         Objects.requireNonNull(this.jsonParser);
@@ -94,23 +95,7 @@ public class FilterBuilderImpl<E, B> implements FilterBuilder<E, B> {
         
         for(String propertyName : this.propertyNames) {
             
-            Predicate<E> result = null;
-            
-            for(String configFile : this.configFilePaths) {
-                
-                final Map filterContextProperties = propertiesParser.parse(configFile);
-                
-                final FilterContext filterContext = this.filterContextProvider.apply(
-                        this.attributeContext, filterContextProperties);
-                
-                final Predicate<E> test = filterContext.or(propertyName, this.defaultTest);
-                
-                if(result == null) {
-                    result = test;
-                }else{
-                    result = result.or(test);
-                }
-            }
+            Predicate<E> result = this.buildPredicate(propertiesParser, propertyName, null);
             
             if(result != null) {
                 
@@ -122,8 +107,35 @@ public class FilterBuilderImpl<E, B> implements FilterBuilder<E, B> {
             }
         }
         
-        return output == null || output.isEmpty() ?
+        final Map<String, Predicate<E>> source = output == null || output.isEmpty() ?
                 Collections.EMPTY_MAP : Collections.unmodifiableMap(output);
+        
+        return (name) -> source.get(name);
+    }
+    
+    public Predicate<E> buildPredicate(
+            PropertiesParser propertiesParser, String propertyName, Predicate<E> outputIfNone) 
+            throws IOException, java.text.ParseException {
+        
+        Predicate<E> result = null;
+
+        for(String configFile : this.configFilePaths) {
+
+            final Map filterContextProperties = propertiesParser.parse(configFile);
+
+            final FilterContext filterContext = this.filterContextProvider.apply(
+                    this.attributeContext, filterContextProperties);
+
+            final Predicate<E> test = filterContext.or(propertyName, this.defaultTest);
+
+            if(result == null) {
+                result = test;
+            }else{
+                result = result.or(test);
+            }
+        }
+
+        return result == null ? outputIfNone : result;
     }
 
     @Override
