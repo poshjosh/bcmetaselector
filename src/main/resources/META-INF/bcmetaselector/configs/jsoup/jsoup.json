@@ -1,0 +1,50 @@
+{
+    "!--WARNING":"DO NOT EDIT ANY OF THE KEYS they are reserved and used within the metaselector api",
+    "!--reservedWords":[
+        {"extends":"Indicates that this Object extends the specified object."},
+        {"include":"Indicates that te specified Object's properties be included in this Object's"}
+    ],
+    "!--notes":[
+        "To specify a regex attribute value, enclose the regex value in regex() e.g one or more digits = regex(\\d+?)",
+        "The value of 'extends' or 'include' may specify a URL or File. Use # to reference another javascript Object by name"
+    ],
+    "basic":{
+        "author":"meta[name=author]",
+        "keywords":"meta[name=keywords],[name=news_keywords]",
+        "description":"meta[name=description]"
+    },
+    "schema.Article":{
+        "title":"meta[itemprop=keywords],[itemprop=name]",
+        "imageUrls":"meta[itemprop=image],[itemprop=thumbnailUrl]",
+        "description":"meta[itemprop=description]",
+        "dateCreated":"meta[itemprop=dateCreated]",
+        "datePublished":"meta[itemprop=datePublished]",
+        "dateModified":"meta[itemprop=dateModified]",
+        "keywords":"meta[itemprop=keywords]",
+        "author":"meta[itemprop=author],[itemprop=creator]",
+        "publisher":"meta[itemprop=publisher],[itemprop=sourceOrganization],[itemprop=producer]",
+        "categorySet":"meta[itemprop=articleSection]",
+        "content":"meta[itemprop=articleBody]"
+    },
+    "opengraph.custom":{
+        "title":"meta[property=og:title]",
+        "author":"meta[property=article:author],[property=book:author]",
+        "publisher":"meta[property=og:site_name]",
+        "type":"meta[property=og:type]",
+        "tagSet":"meta[property*=:tag]",
+        "categorySet":"meta[property*=:section]",
+        "description":"meta[property=og:description]",
+        "datePublished":"meta[property*=:release_date],[property*=:published_time]",
+        "dateModified":"meta[property=article:modified_time],[property=og:updated_time]",
+        "imageUrls":"meta[property=og:image:secure_url],[property=og:image],[property=og:image_url]",
+        "locale":"meta[property=og:locale]"
+    },
+    "twittercard.custom": {
+        "title":"meta[name=title]",
+        "author":"meta[name=twitter:creator],[name=twitter:creator:id]",
+        "publisher":"meta[name=twitter:site],[name=twitter:site:id]",
+        "type":"meta[name=twitter:card]",
+        "description":"meta[name=twitter:description]",
+        "imageUrls":"meta[name=twitter:image]"
+    }
+}

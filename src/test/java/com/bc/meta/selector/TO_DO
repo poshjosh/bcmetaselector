@@ -1,0 +1,23 @@
+Implement using article_default and iterator-mode
+
+Add as many site configs as possible
+
+Once iterator-mode fails for a site switch to collector-mode
+
+Once enough data is collected by iterator-mode no need to do specific-extraction
+
+Use jsoup to perform specific-extraction
+
+Create an extraction module
+---------------------------
+jsoup
+json configs with jsoup query
+json configs to contain other required data
+
+extract node and parse it to another extractor which 
+
+extracts column/named data and passes to a data-consumer
+
+data-consumer should have methods begin() and flush()
+
+
