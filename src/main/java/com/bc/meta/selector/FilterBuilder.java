@@ -18,6 +18,7 @@ package com.bc.meta.selector;
 
 import com.bc.meta.selector.util.JsonParser;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.util.Arrays;
@@ -63,4 +64,6 @@ public interface FilterBuilder<NODE, PREVIOUS_BUILDER> extends Builder<Function<
 
     @Override
     FilterBuilder<NODE, PREVIOUS_BUILDER>  reset();
+
+    FilterBuilder<NODE, PREVIOUS_BUILDER>  streamProvider(Function<String, InputStream> streamProvider);
 }

@@ -30,7 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -39,7 +41,52 @@ import java.util.logging.Logger;
 public class PropertiesParser {
 
     private transient static final Logger LOG = Logger.getLogger(PropertiesParser.class.getName());
+    
+    public static class DefaultStreamProvider implements Function<String, InputStream> {
+        
+        @Override
+        public InputStream apply(String location) {
+            
+            try{
+                
+                final ClassLoader cl = Thread.currentThread().getContextClassLoader(); 
+                InputStream in = cl.getResourceAsStream(location);
+                
+                if(LOG.isLoggable(Level.FINE)) {
+                    LOG.log(Level.FINE, "ClassLoader: {0}, location: {1}, input stream: {2}",
+                            new Object[]{cl, location, in});
+                }
+                
+                if(in == null) {
+                    try{
+                        in = new FileInputStream(location);
+                        if(LOG.isLoggable(Level.FINE)) {
+                            LOG.log(Level.FINE, "Location: {0}, file input stream: {1}",
+                                    new Object[]{location, in});
+                        }
+                    }catch(IOException e) {
+                        try{
+                            in = new URL(location).openStream();
+                            if(LOG.isLoggable(Level.FINE)) {
+                                LOG.log(Level.FINE, "Location: {0}, url input stream: {1}",
+                                        new Object[]{location, in});
+                            }
+                        }catch(MalformedURLException mue) {
+                            throw e;
+                        }
+                    }
+                }
 
+                return in;
+
+            }catch(IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private final Function<String, InputStream> streamProvider;
+    
     private final JsonParser jsonParser;
     
     private final String charset;
@@ -55,10 +102,12 @@ public class PropertiesParser {
     private final String commentPrefix = "!--";
 
     public PropertiesParser(JsonParser jsonParser) {
-        this(jsonParser, StandardCharsets.UTF_8.name(), false);
+        this(new DefaultStreamProvider(), jsonParser, StandardCharsets.UTF_8.name(), false);
     }
     
-    public PropertiesParser(JsonParser jsonParser, String charset, boolean useCache) {
+    public PropertiesParser(Function<String, InputStream> streamProvider, 
+            JsonParser jsonParser, String charset, boolean useCache) {
+        this.streamProvider = Objects.requireNonNull(streamProvider);
         this.jsonParser = Objects.requireNonNull(jsonParser);
         this.charset = Objects.requireNonNull(charset);
         this.useCache = useCache;
@@ -85,7 +134,7 @@ public class PropertiesParser {
             
         }else{
             
-            try(InputStream in = this.getStream(location)) {
+            try(InputStream in = this.streamProvider.apply(location)) {
 
                 final Map config = jsonParser.apply(in, charset);
 
@@ -144,6 +193,19 @@ public class PropertiesParser {
 
     //            System.out.println(buildKey(location, objectName) + '=' + result.toString().replace(",", "\n"));
                 LOG.fine(() -> buildKey(location, objectName) + '=' + result);
+                
+            }catch(RuntimeException e) {
+                
+                if(e.getCause() instanceof IOException) {
+                    
+                    LOG.warning(e.toString());
+                    
+                    throw (IOException)e.getCause();
+                    
+                }else{
+                    
+                    throw e;
+                }
             }
             
             if(this.useCache && result != null) {
@@ -183,22 +245,6 @@ public class PropertiesParser {
         }
         LOG.finer(() -> "Location to include: " + locationToInclude + ", properties:\n" + toInclude);
         return toInclude;
-    }
-
-    public InputStream getStream(String location) throws IOException {
-        InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(location);
-        if(in == null) {
-            try{
-                in = new FileInputStream(location);
-            }catch(IOException e) {
-                try{
-                    in = new URL(location).openStream();
-                }catch(MalformedURLException mue) {
-                    throw e;
-                }
-            }
-        }
-        return in;
     }
     
     public String buildKey(String location, String objectName) {

@@ -31,45 +31,49 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import com.bc.meta.selector.AttributeTestProvider;
+import java.io.InputStream;
 import java.util.function.Function;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Jun 21, 2018 8:58:24 AM
- * @param <E> The Node type that filters (predicates) will be built for
- * @param <B> The back handle type, i.e return type of the #back() method
+ * @param <NODE> The Node type that filters (predicates) will be built for
+ * @param <PREVIOUS_BUILDER> The back handle type, i.e return type of the #back() method
  */
-public class FilterBuilderImpl<E, B> implements FilterBuilder<E, B> {
+public class FilterBuilderImpl<NODE, PREVIOUS_BUILDER> implements FilterBuilder<NODE, PREVIOUS_BUILDER> {
 
     private Collection<String> configFilePaths;
     
     private Collection<String> propertyNames;
     
-    private AttributeTestProvider<E> attributeContext;
+    private AttributeTestProvider<NODE> attributeContext;
     
     private JsonParser jsonParser;
     
-    private BiFunction<AttributeTestProvider<E>, Map, FilterContext<E>> filterContextProvider;
+    private Function<String, InputStream> streamProvider;
     
-    private Predicate<E> defaultTest;
+    private BiFunction<AttributeTestProvider<NODE>, Map, FilterContext<NODE>> filterContextProvider;
+    
+    private Predicate<NODE> defaultTest;
     
     private String charset;
     
-    private final B back;
+    private final PREVIOUS_BUILDER back;
 
     public FilterBuilderImpl() {
         this(null);
     }
     
-    public FilterBuilderImpl(B back) {
+    public FilterBuilderImpl(PREVIOUS_BUILDER back) {
         this.back = back;
         this.reset();
     }
         
     @Override
-    public FilterBuilder<E, B> reset() {
+    public FilterBuilder<NODE, PREVIOUS_BUILDER> reset() {
         this.configFilePaths(Collections.EMPTY_LIST);
         this.propertyNames(Collections.EMPTY_LIST);
         this.attributeContext(null);
+        this.streamProvider(new PropertiesParser.DefaultStreamProvider());
         this.jsonParser(null);
         this.filterContextProvider((ac, cfg) -> new FilterContextImpl(ac, cfg));
         this.defaultTest((node) -> false);
@@ -78,24 +82,25 @@ public class FilterBuilderImpl<E, B> implements FilterBuilder<E, B> {
     }
 
     @Override
-    public B back() {
+    public PREVIOUS_BUILDER back() {
         return Objects.requireNonNull(back, "No back handle specified");
     }
     
     @Override
-    public Function<String, Predicate<E>> build() throws IOException, ParseException{
+    public Function<String, Predicate<NODE>> build() throws IOException, ParseException{
         
         Objects.requireNonNull(this.attributeContext);
+        Objects.requireNonNull(this.streamProvider);
         Objects.requireNonNull(this.jsonParser);
         
-        Map<String, Predicate<E>> output = null;
+        Map<String, Predicate<NODE>> output = null;
         
         final PropertiesParser propertiesParser = new PropertiesParser(
-                this.jsonParser, this.charset, true);
+                this.streamProvider, this.jsonParser, this.charset, true);
         
         for(String propertyName : this.propertyNames) {
             
-            Predicate<E> result = this.buildPredicate(propertiesParser, propertyName, null);
+            Predicate<NODE> result = this.buildPredicate(propertiesParser, propertyName, null);
             
             if(result != null) {
                 
@@ -107,17 +112,17 @@ public class FilterBuilderImpl<E, B> implements FilterBuilder<E, B> {
             }
         }
         
-        final Map<String, Predicate<E>> source = output == null || output.isEmpty() ?
+        final Map<String, Predicate<NODE>> source = output == null || output.isEmpty() ?
                 Collections.EMPTY_MAP : Collections.unmodifiableMap(output);
         
         return (name) -> source.get(name);
     }
     
-    public Predicate<E> buildPredicate(
-            PropertiesParser propertiesParser, String propertyName, Predicate<E> outputIfNone) 
+    public Predicate<NODE> buildPredicate(
+            PropertiesParser propertiesParser, String propertyName, Predicate<NODE> outputIfNone) 
             throws IOException, java.text.ParseException {
         
-        Predicate<E> result = null;
+        Predicate<NODE> result = null;
 
         for(String configFile : this.configFilePaths) {
 
@@ -126,7 +131,7 @@ public class FilterBuilderImpl<E, B> implements FilterBuilder<E, B> {
             final FilterContext filterContext = this.filterContextProvider.apply(
                     this.attributeContext, filterContextProperties);
 
-            final Predicate<E> test = filterContext.or(propertyName, this.defaultTest);
+            final Predicate<NODE> test = filterContext.or(propertyName, this.defaultTest);
 
             if(result == null) {
                 result = test;
@@ -139,43 +144,49 @@ public class FilterBuilderImpl<E, B> implements FilterBuilder<E, B> {
     }
 
     @Override
-    public FilterBuilder<E, B> configFilePaths(Collection<String> configFilePaths) {
+    public FilterBuilder<NODE, PREVIOUS_BUILDER> configFilePaths(Collection<String> configFilePaths) {
         this.configFilePaths = configFilePaths;
         return this;
     }
 
     @Override
-    public FilterBuilder<E, B> propertyNames(Collection<String> propertyNames) {
+    public FilterBuilder<NODE, PREVIOUS_BUILDER> propertyNames(Collection<String> propertyNames) {
         this.propertyNames = propertyNames;
         return this;
     }
 
     @Override
-    public FilterBuilder<E, B> attributeContext(AttributeTestProvider<E> attributeContext) {
+    public FilterBuilder<NODE, PREVIOUS_BUILDER> attributeContext(AttributeTestProvider<NODE> attributeContext) {
         this.attributeContext = attributeContext;
         return this;
     }
 
     @Override
-    public FilterBuilder<E, B> jsonParser(JsonParser jsonParser) {
+    public FilterBuilder<NODE, PREVIOUS_BUILDER> streamProvider(Function<String, InputStream> streamProvider) {
+        this.streamProvider = streamProvider;
+        return this;
+    }
+
+    @Override
+    public FilterBuilder<NODE, PREVIOUS_BUILDER> jsonParser(JsonParser jsonParser) {
         this.jsonParser = jsonParser;
         return this;
     }
 
     @Override
-    public FilterBuilder<E, B> filterContextProvider(BiFunction<AttributeTestProvider<E>, Map, FilterContext<E>> filterContextProvider) {
+    public FilterBuilder<NODE, PREVIOUS_BUILDER> filterContextProvider(BiFunction<AttributeTestProvider<NODE>, Map, FilterContext<NODE>> filterContextProvider) {
         this.filterContextProvider = filterContextProvider;
         return this;
     }
 
     @Override
-    public FilterBuilder<E, B> defaultTest(Predicate<E> defaultTest) {
+    public FilterBuilder<NODE, PREVIOUS_BUILDER> defaultTest(Predicate<NODE> defaultTest) {
         this.defaultTest = defaultTest;
         return this;
     }
 
     @Override
-    public FilterBuilder<E, B> charset(String charset) {
+    public FilterBuilder<NODE, PREVIOUS_BUILDER> charset(String charset) {
         this.charset = charset;
         return this;
     }
