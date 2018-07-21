@@ -19,6 +19,7 @@ package com.bc.meta.selector;
 import com.bc.meta.Metadata;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -43,6 +44,11 @@ public class MetaContent<E> implements Metadata {
         this.nodes = Collections.unmodifiableList(nodes);
         this.filterContext = Objects.requireNonNull(filterContext);
         this.attributeValueExtractor = Objects.requireNonNull(attributeValueExtractor);
+    }
+
+    @Override
+    public Map<String, ?> toMap() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override

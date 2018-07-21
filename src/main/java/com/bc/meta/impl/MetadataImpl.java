@@ -18,6 +18,7 @@ package com.bc.meta.impl;
 
 import com.bc.meta.Metadata;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -30,7 +31,12 @@ public class MetadataImpl implements Serializable, Metadata {
     private final Map<String, Object> values;
 
     public MetadataImpl(Map<String, Object> values) {
-        this.values = Objects.requireNonNull(values);
+        this.values = Collections.unmodifiableMap(values);
+    }
+
+    @Override
+    public Map<String, ?> toMap() {
+        return values;
     }
 
     @Override
@@ -40,6 +46,6 @@ public class MetadataImpl implements Serializable, Metadata {
 
     @Override
     public Set<String> getValues(String name) {
-        return (Set<String>)values.get(name);
+        return (Set<String>)values.getOrDefault(name, Collections.EMPTY_SET);
     }
 }

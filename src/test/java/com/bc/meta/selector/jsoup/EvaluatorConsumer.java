@@ -24,6 +24,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import org.jsoup.select.Evaluator;
+import org.jsoup.select.QueryParser;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Jun 22, 2018 1:43:02 PM
@@ -36,14 +37,18 @@ public class EvaluatorConsumer implements Serializable {
         this.consumer = Objects.requireNonNull(consumer);
     }
     
+    public void traverse(Element root, String cssQuery) {
+        this.traverse(root, QueryParser.parse(cssQuery));
+    }
+
     /**
      * Adapted from {@link org.jsoup.select.NodeTraversor#traverse(org.jsoup.select.NodeVisitor, org.jsoup.nodes.Node) NodeTraversor#traverse}
      * Start a depth-first traverse of the root and all of its descendants.
-     * @param eval the Evaluator which decides nodes to accept
      * @param root the root node point to traverse.
+     * @param eval the Evaluator which decides nodes to accept
      * @see org.jsoup.select.NodeTraversor#traverse(org.jsoup.select.NodeVisitor, org.jsoup.nodes.Node)
      */
-    public void traverse(Evaluator eval, Element root) {
+    public void traverse(Element root, Evaluator eval) {
         Node node = root;
         int depth = 0;
         
@@ -66,6 +71,10 @@ public class EvaluatorConsumer implements Serializable {
         }
     }
 
+    public void traverse(Elements elements, String cssQuery) {
+        this.traverse(elements, QueryParser.parse(cssQuery));
+    }
+    
     /**
      * Adapted from {@link org.jsoup.select.NodeTraversor#traverse(org.jsoup.select.NodeVisitor, org.jsoup.select.Elements) NodeTraversor#traverse}
      * Start a depth-first traverse of all elements.
@@ -73,10 +82,10 @@ public class EvaluatorConsumer implements Serializable {
      * @param elements Elements to filter.
      * @see org.jsoup.select.NodeTraversor#traverse(org.jsoup.select.NodeVisitor, org.jsoup.select.Elements) 
      */
-    public void traverse(Evaluator eval, Elements elements) {
+    public void traverse(Elements elements, Evaluator eval) {
         Validate.notNull(elements);
         for (Element el : elements) {
-            traverse(eval, el);
+            traverse(el, eval);
         }    
     }
     
@@ -92,7 +101,7 @@ public class EvaluatorConsumer implements Serializable {
         if (node instanceof Element) {
             Element el = (Element) node;
             if (eval.matches(root, el)) {
-                consumer.accept(el, depth);
+                this.consume(el, depth);
             }    
         }
     }
@@ -107,5 +116,9 @@ public class EvaluatorConsumer implements Serializable {
      */
     public void tail(Evaluator eval, Element root, Node node, int depth) {
         // void
+    }
+    
+    public void consume(Element el, int depth) {
+        consumer.accept(el, depth);
     }
 }

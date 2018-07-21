@@ -37,6 +37,8 @@ public class Main {
             final String urlStr = "";
             final Document doc = org.jsoup.Jsoup.parse(new URL(urlStr), timeout);
             
+//            doc.select(cssQuery);
+            
             final String cssQuery = "";
             Validate.notEmpty(cssQuery);
 

@@ -20,6 +20,7 @@ import java.text.ParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -33,6 +34,10 @@ public interface Metadata {
 //<meta name="geo.region" content="NG-Lagos"/>
     Metadata EMPTY = new Metadata() {
         @Override
+        public Map toMap() {
+            return Collections.EMPTY_MAP;
+        }
+        @Override
         public String getValue(String name, String outputIfNone) {
             return outputIfNone;
         }
@@ -41,6 +46,8 @@ public interface Metadata {
             return Collections.EMPTY_SET;
         }
     };
+    
+    Map<String, ?> toMap(); 
     
     default String getValue(String [] nameOptions, String outputIfNone) {
         String value = null;

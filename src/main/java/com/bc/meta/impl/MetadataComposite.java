@@ -20,6 +20,8 @@ import com.bc.meta.Metadata;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -38,6 +40,15 @@ public class MetadataComposite implements Metadata {
     
     public MetadataComposite(Metadata... delegates) {
         this.delegates = Arrays.asList(delegates);
+    }
+
+    @Override
+    public Map<String, ?> toMap() {
+        final Map map = new HashMap();
+        for(Metadata delegate : delegates) {
+            map.putAll(delegate.toMap());
+        }
+        return map.isEmpty() ? Collections.EMPTY_MAP : Collections.unmodifiableMap(map);
     }
 
     @Override
