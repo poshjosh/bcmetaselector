@@ -118,7 +118,7 @@ public class PropertiesParser {
         return this.parse(location, null);
     }
     
-    public Map parse(String location, String objectName) throws IOException, ParseException {
+    public Map parse(final String location, final String objectName) throws IOException, ParseException {
         
         final String objKey = this.buildKey(location, objectName);
         
@@ -130,7 +130,7 @@ public class PropertiesParser {
          
             result = fromCache;
             
-            LOG.fine(() -> "For: " + objKey + ", FROM CACHE:\n" + fromCache);
+            LOG.finer(() -> "For: " + objKey + ", FROM CACHE:\n" + fromCache);
             
         }else{
             
@@ -139,7 +139,7 @@ public class PropertiesParser {
                 final Map config = jsonParser.apply(in, charset);
 
     //            System.out.println(location + '=' + config.toString().replace(",", "\n"));
-                LOG.fine(() -> location + ":\n" + config);
+                LOG.finer(() -> location + ":\n" + config);
 
                 final Map objectConfig;
                 if(objectName != null) {
@@ -157,11 +157,11 @@ public class PropertiesParser {
                 }
 
     //            System.out.println(objKey + ":\n" + objectConfig.toString().replace(",", "\n"));
-                LOG.fine(() -> objKey + ":\n" + objectConfig);
+                LOG.finer(() -> objKey + ":\n" + objectConfig);
 
                 final Map objectProps = (Map)objectConfig.get(propertiesKey);
                 
-                LOG.fine(() -> objKey + " properties:\n" + objectProps);
+                LOG.finer(() -> objKey + " properties:\n" + objectProps);
 
                 final String parentLocation = (String)objectConfig.get("extends");
 
@@ -191,8 +191,8 @@ public class PropertiesParser {
                     }
                 }
 
-    //            System.out.println(buildKey(location, objectName) + '=' + result.toString().replace(",", "\n"));
-                LOG.fine(() -> buildKey(location, objectName) + '=' + result);
+    //            System.out.println(objKey + '=' + result.toString().replace(",", "\n"));
+                LOG.fine(() -> objKey + '=' + result);
                 
             }catch(RuntimeException e) {
                 

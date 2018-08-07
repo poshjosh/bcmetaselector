@@ -83,7 +83,7 @@ public class SelectorImpl<NODE, NODEVALUE> implements Serializable, Selector<NOD
             }
         }
 
-        LOG.log(Level.FINE, "Done selecting {0} nodes.", consumed);
+        LOG.log(Level.FINER, "Done selecting {0} nodes.", consumed);
         
         return this.flush(collector);
     }

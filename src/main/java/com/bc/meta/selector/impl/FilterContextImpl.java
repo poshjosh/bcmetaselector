@@ -41,7 +41,7 @@ public class FilterContextImpl<NODE> extends AbstractFilterContext<NODE> impleme
         this.attributeContext = Objects.requireNonNull(attributeContext);
         this.config = Collections.unmodifiableMap(config);
 //        System.out.println("FilterContextImpl-" + LocalDateTime.now() +  ". Config: " + config);
-        LOG.log(Level.FINE, "Config: {0}", config);
+        LOG.log(Level.FINER, "Config: {0}", config);
     }
     
     @Override
